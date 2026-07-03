@@ -6,17 +6,28 @@
 
 ## 🎨 界面预览
 
-### 1. 搜索与链接解析提取主页 (Search & Extract)
-![搜索提取页面](assets/screenshot_search.png)
-
-### 2. 几何极简配置面板 (Settings & Configuration)
-![配置面板](assets/screenshot_settings.png)
-
-### 3. 便捷环境一键初始化部署弹窗 (Modal Dialog Confirm)
-![专属环境一键部署](assets/screenshot_modal.png)
-
-### 4. 实时下载任务日志与状态 (Realtime Task Logs)
-![实时任务日志](assets/screenshot_logs.png)
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <b>1. 搜索与解析提取主页 (Search & Extract)</b><br/>
+      <img src="assets/screenshot_search.png" width="95%" alt="搜索提取主页"/>
+    </td>
+    <td width="50%" align="center">
+      <b>2. 几何极简配置面板 (Settings Panel)</b><br/>
+      <img src="assets/screenshot_settings.png" width="95%" alt="配置面板"/>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <b>3. 专属环境一键部署弹窗 (Modal Dialog)</b><br/>
+      <img src="assets/screenshot_modal.png" width="95%" alt="一键部署弹窗"/>
+    </td>
+    <td width="50%" align="center">
+      <b>4. 实时任务运行日志 (Realtime Logs)</b><br/>
+      <img src="assets/screenshot_logs.png" width="95%" alt="实时任务日志"/>
+    </td>
+  </tr>
+</table>
 
 ---
 
