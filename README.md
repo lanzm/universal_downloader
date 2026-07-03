@@ -4,6 +4,22 @@
 
 ---
 
+## 🎨 界面预览
+
+### 1. 搜索与链接解析提取主页 (Search & Extract)
+![搜索提取页面](assets/screenshot_search.png)
+
+### 2. 几何极简配置面板 (Settings & Configuration)
+![配置面板](assets/screenshot_settings.png)
+
+### 3. 便捷环境一键初始化部署弹窗 (Modal Dialog Confirm)
+![专属环境一键部署](assets/screenshot_modal.png)
+
+### 4. 实时下载任务日志与状态 (Realtime Task Logs)
+![实时任务日志](assets/screenshot_logs.png)
+
+---
+
 ## ✨ 核心特性
 
 - 📥 **双模式音视频提取**：
