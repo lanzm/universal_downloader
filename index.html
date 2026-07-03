@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音视频提取下载器 - 几何极简仪表盘</title>
+    <!-- Import Google Fonts Outfit and Work Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root, :root.theme-dark {
+            --bg-main: #0f172a;
+            --bg-sidebar: #090d16;
+            --bg-card: #1e293b;
+            --bg-input: #0f172a;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #818cf8;
+            --accent-dark: #6366f1;
+            --accent-hover: #4f46e5;
+            --console-bg: #090d16;
+            --font-heading: 'Outfit', 'Segoe UI', -apple-system, sans-serif;
+            --font-body: 'Work Sans', -apple-system, sans-serif;
+        }
+
+        :root.theme-light {
+            --bg-main: #f1f5f9;
+            --bg-sidebar: #e2e8f0;
+            --bg-card: #ffffff;
+            --bg-input: #f8fafc;
+            --border-color: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --accent-color: #4f46e5;
+            --accent-dark: #6366f1;
+            --accent-hover: #312e81;
+            --console-bg: #0f172a;
+            --font-heading: 'Outfit', 'Segoe UI', -apple-system, sans-serif;
+            --font-body: 'Work Sans', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        h1, h2, h3, .sidebar-brand, .card-title, .nav-item, .settings-section-title, .logs-title-main {
+            font-family: var(--font-heading);
+        }
+
+        /* 1. LEFT SIDEBAR NAVIGATION MENU */
+        .sidebar {
+            width: 220px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            flex-shrink: 0;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .sidebar-brand {
+            padding: 0 20px;
+            font-size: 16.5px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+            letter-spacing: 0.05em;
+        }
+
+        .sidebar-brand svg {
+            color: var(--accent-color);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            font-size: 14.5px;
+            color: var(--text-muted);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            font-weight: 500;
+            position: relative;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 25%;
+            height: 50%;
+            width: 3px;
+            background-color: var(--accent-dark);
+            border-radius: 2px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 0 20px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-heading);
+        }
+
+        /* 2. MAIN DISPLAY CONTAINER */
+        .main-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .tab-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 24px;
+            box-sizing: border-box;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .tab-view.active {
+            display: flex;
+        }
+
+        /* Modern Switch Toggle Style */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: .25s ease;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #ffffff;
+            transition: .25s ease;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+
+        .switch input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        .switch input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Cards styling */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+            letter-spacing: 0.02em;
+        }
+
+        .card-title svg {
+            color: var(--accent-color);
+        }
+
+        /* Search input with solid geometric line style */
+        .search-input-wrapper {
+            position: relative;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            height: 40px;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
+        }
+
+        .search-input-wrapper:focus-within {
+            border-color: var(--accent-dark);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            height: 100%;
+            border: none !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            font-size: 14px !important;
+            padding: 0 14px !important;
+            color: var(--text-main);
+            outline: none;
+            font-family: var(--font-body);
+            box-sizing: border-box;
+            transition: color 0.2s ease;
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 500;
+            font-family: var(--font-heading);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        input[type="text"], input[type="number"] {
+            flex-grow: 1;
+            height: 40px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0 12px;
+            font-size: 14px;
+            font-family: var(--font-body);
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+        }
+
+        select {
+            flex-grow: 1;
+            height: 40px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            padding: 0 32px 0 12px;
+            font-size: 14px;
+            font-family: var(--font-body);
+            outline: none;
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+            cursor: pointer;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--accent-dark);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Buttons */
+        button {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            height: 40px;
+            padding: 0 20px;
+            font-size: 14px;
+            font-family: var(--font-body);
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-sizing: border-box;
+            transition: background-color 0.15s ease, opacity 0.15s ease, color 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        button:hover {
+            background-color: var(--bg-card);
+        }
+
+        button:active {
+            background-color: var(--bg-input);
+        }
+
+        button.btn-accent {
+            background-color: var(--accent-dark);
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            height: 40px;
+            padding: 0 24px;
+            border-radius: 6px;
+            font-family: var(--font-heading);
+            letter-spacing: 0.02em;
+            box-sizing: border-box;
+        }
+
+        button.btn-accent:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button.btn-accent:active {
+            background-color: #3730a3;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: var(--bg-main) !important;
+            color: var(--text-muted) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        /* Recommendations badges */
+        .recommendations {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+            align-items: center;
+        }
+
+        .rec-badge {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .rec-badge:hover {
+            background-color: var(--bg-main);
+            border-color: var(--accent-color);
+            color: var(--text-main);
+        }
+
+        /* Table lists */
+        .results-container {
+            flex-grow: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+
+        .table-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-input);
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--bg-sidebar);
+            color: var(--text-muted);
+            padding: 12px 14px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-family: var(--font-heading);
+            letter-spacing: 0.05em;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: background-color 0.15s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        tr {
+            background-color: transparent;
+        }
+
+        tr:hover td {
+            background-color: var(--bg-card);
+        }
+
+        /* Inline action button inside rows */
+        .btn-dl-inline {
+            background-color: var(--accent-dark);
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background-color 0.15s ease;
+            font-family: var(--font-heading);
+        }
+
+        .btn-dl-inline:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Logs Console View styling */
+        .console-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        .console-box {
+            flex-grow: 1;
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+
+        /* Circular progress floating inside logs tab header */
+        .logs-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .logs-title-main {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.02em;
+        }
+
+        .mini-progress-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .mini-progress-fill {
+            width: 80px;
+            height: 5px;
+            background-color: var(--bg-main);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .mini-progress-fill-inner {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: width 0.3s ease;
+        }
+
+        .mini-percent-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-color);
+            font-family: var(--font-heading);
+        }
+
+        /* Settings View styling */
+        .settings-view {
+            overflow-y: auto;
+        }
+
+        .settings-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            color: var(--text-main);
+            letter-spacing: 0.02em;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .settings-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .settings-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .settings-desc {
+            font-size: 12.5px;
+            color: var(--text-muted);
+        }
+
+        .settings-control {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* About View styling */
+        .about-view {
+            overflow-y: auto;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .about-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .about-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.05em;
+        }
+
+        .about-version {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            background-color: var(--bg-card);
+            padding: 4px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            font-family: var(--font-heading);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .about-desc-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 520px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            text-align: left;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--accent-dark);
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--text-main);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 999;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Premium Modal Dialog */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+        }
+        .modal-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            width: 440px;
+            max-width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 10px 10px -5px rgba(0,0,0,0.5);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.15s ease;
+        }
+        .modal-close-btn:hover {
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LEFT SIDEBAR NAVIGATION MENU -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+            <span data-i18n="brand-title">音视频提取器</span>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-item active" id="nav-search" onclick="switchTab('tab-search', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span data-i18n="nav-search">搜索提取</span>
+            </div>
+            <div class="nav-item" id="nav-logs" onclick="switchTab('tab-logs', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                <span data-i18n="nav-logs">下载日志</span>
+            </div>
+            <div class="nav-item" id="nav-settings" onclick="switchTab('tab-settings', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span data-i18n="nav-settings">配置参数</span>
+            </div>
+            <div class="nav-item" id="nav-about" onclick="switchTab('tab-about', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <span data-i18n="nav-about">关于软件</span>
+            </div>
+        </div>
+
+        <div class="sidebar-footer" data-i18n="footer-version">
+            本地版本 v2.2
+        </div>
+    </div>
+
+    <!-- 2. MAIN DISPLAY FRAME -->
+    <div class="main-display">
+
+        <!-- TAB VIEW 1: SEARCH & RESULT LIST (Active by default) -->
+        <div class="tab-view active" id="tab-search">
+            <!-- Search card -->
+            <div class="card">
+                <div class="card-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span data-i18n="search-title">搜索与直接提取</span>
+                </div>
+                <div class="input-row">
+                    <select id="search-platform" style="max-width: 120px;">
+                        <option value="Bilibili" selected>Bilibili</option>
+                        <option value="YouTube">YouTube</option>
+                    </select>
+                    <!-- Search input with clean indigo outline border -->
+                    <div class="search-input-wrapper">
+                        <input type="text" id="search-keyword" data-i18n="search-placeholder" placeholder="输入歌手名、歌名搜索，或粘贴视频链接/BV号直接回车提取下载" onkeydown="if(event.key==='Enter') triggerSearchOrDownload()">
+                    </div>
+                    <button class="btn-accent" onclick="triggerSearchOrDownload()" data-i18n="btn-execute" style="padding: 10px 24px;">执行</button>
+                </div>
+
+                <div class="recommendations">
+                    <span style="font-size: 11px; color: var(--text-muted); margin-right: 6px; font-family: var(--font-heading);" data-i18n="rec-title">快捷推荐:</span>
+                    <span class="rec-badge" onclick="loadRec('https://www.bilibili.com/video/BV1yM4y1h775')">S.H.E 经典合集 (分P)</span>
+                    <span class="rec-badge" onclick="loadRec('https://www.bilibili.com/video/BV15W421u7H6')">S.H.E 2001-2018 作品集</span>
+                    <span class="rec-badge" onclick="loadRec('https://www.bilibili.com/video/BV1zh41147tB')">S.H.E 现场/Live合集</span>
+                    <span class="rec-badge" onclick="loadRec('https://www.bilibili.com/video/BV1G14y1474v')">周杰伦经典歌曲合集</span>
+                </div>
+            </div>
+
+            <!-- Result Table list card -->
+            <div class="card results-container">
+                <div class="card-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span data-i18n="list-title">检索结果列表</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 45%;" data-i18n="table-col-title">标题/歌曲名称</th>
+                                <th style="width: 22%;" data-i18n="table-col-author">UP主/歌手</th>
+                                <th style="width: 15%;" data-i18n="table-col-type">内容类型</th>
+                                <th style="width: 18%; text-align: center;" data-i18n="table-col-action">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 50px 0;" data-i18n="table-no-data">
+                                    暂无检索数据。输入关键词搜索，或直接粘贴视频链接。
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB VIEW 2: LOG MONITORING VIEW -->
+        <div class="tab-view" id="tab-logs">
+            <div class="logs-header-row">
+                <span class="logs-title-main" data-i18n="logs-title">任务运行与提取日志</span>
+                
+                <!-- Floating mini progress bar -->
+                <div class="mini-progress-bar" id="mini-progress">
+                    <div class="mini-progress-fill">
+                        <div class="mini-progress-fill-inner" id="mini-progress-fill"></div>
+                    </div>
+                    <span class="mini-percent-text" id="mini-percent">0%</span>
+                </div>
+            </div>
+
+            <div class="card console-container">
+                <div class="console-box" id="console-box"></div>
+            </div>
+
+            <!-- Action buttons at the bottom of Logs view -->
+            <div class="input-row" style="margin-top: 16px; justify-content: flex-start; gap: 12px;">
+                <button id="btn-pause-task" onclick="togglePauseTask()" data-i18n="btn-pause" style="padding: 12px 28px; font-size: 14px; font-weight: 600; background-color: var(--bg-main);">暂停</button>
+                <button id="btn-cancel-task" onclick="cancelTask()" data-i18n="btn-cancel" style="padding: 12px 28px; font-size: 14px; font-weight: 600; background-color: #ef4444; color: #fff;">终止</button>
+                <button id="btn-clear-logs" onclick="clearLogs()" data-i18n="btn-clear" style="padding: 12px 28px; font-size: 14px; font-weight: 600; background-color: var(--bg-main); margin-left: auto;">清空日志</button>
+            </div>
+        </div>
+
+        <!-- TAB VIEW 3: SETTINGS CONFIGURATION VIEW -->
+        <div class="tab-view" id="tab-settings">
+            <!-- Global common config section -->
+            <div class="settings-section-title" style="margin-top: 0;" data-i18n="settings-global">全局通用配置</div>
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="save-dir-title">音频保存目录</div>
+                    <div class="settings-desc" data-i18n="save-dir-desc">指定歌曲提取保存的目的地路径。</div>
+                </div>
+                <div class="settings-control" style="width: 380px;">
+                    <input type="text" id="settings-save-dir" readonly style="font-size: 13px; background-color: var(--bg-input);">
+                    <button onclick="browseDirectory()" data-i18n="btn-change-path">更改路径</button>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="output-format-title">默认输出格式</div>
+                    <div class="settings-desc" data-i18n="output-format-desc">选择输出为 320k 高品质 MP3、无损 FLAC 或保留原格式 M4A。</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settings-audio-format" style="width: 160px;" onchange="saveAudioFormatSetting()">
+                        <option value="MP3 (320kbps)" selected>MP3 (320kbps)</option>
+                        <option value="FLAC (无损)">FLAC (无损)</option>
+                        <option value="M4A (原音质)">M4A (原音质)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="theme-title">界面视觉主题</div>
+                    <div class="settings-desc" data-i18n="theme-desc">切换应用程序的主题外观（明亮或暗黑）。</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settings-theme" style="width: 160px;" onchange="changeTheme()">
+                        <option value="dark" selected data-i18n="theme-dark">深邃暗黑 (Dark)</option>
+                        <option value="light" data-i18n="theme-light">极简明亮 (Light)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="overwrite-title">同名已存在文件处理</div>
+                    <div class="settings-desc" data-i18n="overwrite-desc">检测到目标文件夹中已有同名最终音频时，选择覆盖重新下载或直接跳过。</div>
+                </div>
+                <div class="settings-control" style="align-items: center; gap: 10px;">
+                    <span id="label-overwrite-status" style="font-size: 13.5px; font-weight: 600; color: var(--text-color);">覆盖</span>
+                    <label class="switch">
+                        <input type="checkbox" id="settings-overwrite-enable" onchange="saveOverwriteSetting()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="lang-title">显示语言</div>
+                    <div class="settings-desc" data-i18n="lang-desc">切换界面显示的语言（中文或英文）。</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settings-lang" style="width: 160px;" onchange="changeLanguage()">
+                        <option value="zh" selected>简体中文 (Chinese)</option>
+                        <option value="en">English (US)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div class="settings-info">
+                        <div class="settings-title" data-i18n="proxy-title">网络代理设置</div>
+                        <div class="settings-desc" data-i18n="proxy-desc">启用代理访问 YouTube 等网站。支持 HTTP/SOCKS5 代理。</div>
+                    </div>
+                    <div class="settings-control" style="align-items: center; gap: 10px;">
+                        <span data-i18n="proxy-enable" style="font-size: 13.5px; font-weight: 600; color: var(--text-color);">启用代理</span>
+                        <label class="switch">
+                            <input type="checkbox" id="settings-proxy-enable" onchange="saveProxySetting()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="proxy-input-container" style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                    <input type="text" id="settings-proxy" placeholder="示例: http://127.0.0.1:7890" style="font-size: 13.5px; background-color: var(--bg-input); flex-grow: 1;" onchange="saveProxySetting()">
+                </div>
+            </div>
+
+            <!-- Environment Configuration -->
+            <div class="settings-section-title" style="margin-top: 24px;" data-i18n="settings-environment">运行环境配置</div>
+            
+            <!-- One-click Initialize Row -->
+            <div class="settings-row" style="padding: 16px 20px; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(79, 70, 229, 0.05) 100%); border: 1px dashed rgba(99, 102, 241, 0.25); border-radius: 8px;">
+                <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
+                    <div class="settings-title" data-i18n="init-env-title" style="color: var(--accent-color);">一键部署专属运行环境</div>
+                    <div class="settings-desc" data-i18n="init-env-desc">自动在项目目录下创建 python_env 与 ffmpeg_env，下载并部署独立的绿色便携环境。</div>
+                </div>
+                <div class="settings-control">
+                    <button id="btn-init-env" onclick="initEnvironment()" data-i18n="btn-init-env" class="btn-accent" style="padding: 10px 18px; font-size: 13px; font-weight: 600;">一键初始化</button>
+                </div>
+            </div>
+            
+            <!-- Python Env Row -->
+            <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
+                    <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
+                        <div class="settings-title" data-i18n="python-path-title">Python 运行环境</div>
+                        <div class="settings-desc" data-i18n="python-path-desc">自定义 Python 解释器路径。留空则自动探测内置环境或系统路径。</div>
+                    </div>
+                    <div class="settings-control" style="gap: 8px;">
+                        <button id="btn-verify-python" onclick="verifyPython()" data-i18n="btn-verify" class="btn-secondary" style="padding: 10px 14px; font-size: 13px;">环境校验</button>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <input type="text" id="settings-python-path" placeholder="示例: D:\program\my\universal_downloader\python_env\python.exe" style="font-size: 13.5px; background-color: var(--bg-input); width: 100%;" onchange="savePythonPathSetting()">
+                    <div id="status-verify-python" style="font-size: 12px; display: none; align-items: center; gap: 6px; font-family: var(--font-heading);"></div>
+                </div>
+            </div>
+
+            <!-- FFmpeg Env Row -->
+            <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
+                    <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
+                        <div class="settings-title" data-i18n="ffmpeg-path-title">FFmpeg 转码工具</div>
+                        <div class="settings-desc" data-i18n="ffmpeg-path-desc">自定义 FFmpeg 可执行文件或目录路径。留空则使用内置转码器。</div>
+                    </div>
+                    <div class="settings-control" style="gap: 8px;">
+                        <button id="btn-verify-ffmpeg" onclick="verifyFFmpeg()" data-i18n="btn-verify" class="btn-secondary" style="padding: 10px 14px; font-size: 13px;">环境校验</button>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <input type="text" id="settings-ffmpeg-path" placeholder="示例: D:\program\my\universal_downloader\ffmpeg.exe" style="font-size: 13.5px; background-color: var(--bg-input); width: 100%;" onchange="saveFFmpegPathSetting()">
+                    <div id="status-verify-ffmpeg" style="font-size: 12px; display: none; align-items: center; gap: 6px; font-family: var(--font-heading);"></div>
+                </div>
+            </div>
+
+            <!-- Bilibili config section -->
+            <div class="settings-section-title" style="margin-top: 24px;" data-i18n="settings-bilibili">Bilibili (B站) 配置</div>
+            
+            <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
+                    <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
+                        <div class="settings-title" data-i18n="cookie-title-bili">B站 Cookie 授权浏览器</div>
+                        <div class="settings-desc" data-i18n="cookie-desc-bili">若需拉取 B站 1080P 或无损高音质，请在此选择已登录 B站 的浏览器，提取器将自动读取登录凭证。</div>
+                    </div>
+                    <div class="settings-control" style="flex-wrap: wrap; gap: 8px;">
+                        <select id="settings-cookie-browser-bili" style="width: 160px;" onchange="saveCookieBrowserBili()">
+                            <option value="无 (None)" selected>无 (None)</option>
+                            <option value="edge">edge</option>
+                            <option value="chrome">chrome</option>
+                            <option value="firefox">firefox</option>
+                        </select>
+                        <button id="btn-browser-login-bili" onclick="openBrowserLogin('bilibili')" data-i18n="btn-go-login-bili" style="padding: 10px 14px; font-size: 13px;">登录 B站</button>
+                    </div>
+                </div>
+                
+                <!-- Cookie warning banner -->
+                <div id="cookie-warning-banner" style="display: none; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #f87171; line-height: 1.5; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <span data-i18n="cookie-warn-text">由于您选择了非 MP3 格式（FLAC/M4A），B站必须关联 Cookie 授权浏览器方可提取高音质/无损音频，请在上方选择包含您B站登录状态的浏览器，否则可能仅下载最低的 64k 标准音质。</span>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="delay-title-bili">B站多分P防风控随机延时</div>
+                    <div class="settings-desc" data-i18n="delay-desc-bili">在批量下载 B站 多分P播放列表时，每首歌防风控等待的延时范围（5秒到最大秒数之间随机，最大秒数最低为6）。</div>
+                </div>
+                <div class="settings-control">
+                    <span style="font-size: 14px; color: var(--text-main); font-family: var(--font-heading); margin-right: 4px;">5</span>
+                    <span data-i18n="delay-to" style="font-size: 13px; color: var(--text-muted);">至</span>
+                    <input type="number" id="settings-delay-max-bili" min="6" value="10" style="width: 80px; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 8px 10px; font-size: 14px; outline: none; text-align: center;" onchange="validateDelayMaxBiliInput()">
+                    <span data-i18n="delay-range-suffix" style="font-size: 13px; color: var(--text-muted); font-family: var(--font-heading); margin-left: 4px;">秒之间随机</span>
+                </div>
+            </div>
+
+            <!-- YouTube config section -->
+            <div class="settings-section-title" style="margin-top: 24px;" data-i18n="settings-youtube">YouTube (油管) 配置</div>
+            
+            <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
+                    <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
+                        <div class="settings-title" data-i18n="cookie-title-yt">YouTube Cookie 授权浏览器</div>
+                        <div class="settings-desc" data-i18n="cookie-desc-yt">遇到YouTube机器人校验“Sign in to confirm you’re not a bot”时，请选择已登录 YouTube 账号的浏览器，提取器将自动读取登录状态。</div>
+                    </div>
+                    <div class="settings-control" style="flex-wrap: wrap; gap: 8px;">
+                        <select id="settings-cookie-browser-yt" style="width: 160px;" onchange="saveCookieBrowserYt()">
+                            <option value="无 (None)" selected>无 (None)</option>
+                            <option value="edge">edge</option>
+                            <option value="chrome">chrome</option>
+                            <option value="firefox">firefox</option>
+                        </select>
+                        <button id="btn-browser-login-yt" onclick="openBrowserLogin('youtube')" data-i18n="btn-go-login-yt" style="padding: 10px 14px; font-size: 13px;">登录 YouTube</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-info">
+                    <div class="settings-title" data-i18n="delay-title-yt">YouTube多分P防风控随机延时</div>
+                    <div class="settings-desc" data-i18n="delay-desc-yt">在批量下载 YouTube 播放列表/歌单时，每首歌防风控等待的延时范围（5秒到最大秒数之间随机，最大秒数最低为6）。</div>
+                </div>
+                <div class="settings-control">
+                    <span style="font-size: 14px; color: var(--text-main); font-family: var(--font-heading); margin-right: 4px;">5</span>
+                    <span data-i18n="delay-to" style="font-size: 13px; color: var(--text-muted);">至</span>
+                    <input type="number" id="settings-delay-max-yt" min="6" value="10" style="width: 80px; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 8px 10px; font-size: 14px; outline: none; text-align: center;" onchange="validateDelayMaxYtInput()">
+                    <span data-i18n="delay-range-suffix" style="font-size: 13px; color: var(--text-muted); font-family: var(--font-heading); margin-left: 4px;">秒之间随机</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB VIEW 4: ABOUT APPLICATION VIEW -->
+        <div class="tab-view about-view" id="tab-about">
+            <div class="about-logo">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+            </div>
+            <h1 class="about-title" data-i18n="about-header">音视频提取下载器</h1>
+            <span class="about-version" data-i18n="about-sub">WinUI 3 几何极简网页版 v2.2</span>
+
+            <div class="about-desc-card" id="about-desc-zh">
+                本程序是一款基于 Python 内置 Web 服务的无依赖、高颜值本地音视频提取器。
+                <br><br>
+                <b>操作指引：</b>
+                <br>
+                1. <b>搜索提取</b>：在“搜索提取”标签页中，输入任意关键字，点击执行即可获取解析结果。点击每行最右侧的 <b>提取音频</b> 按钮即可触发下载。
+                <br>
+                2. <b>链接直提</b>：直接在搜索框粘贴 B站视频链接、BV号或网易云歌曲链接，回车或点击执行，系统会跳过搜索直接拉起下载。
+                <br>
+                3. <b>下载自动监控</b>：无论是点击表格下载，还是粘贴链接回车，系统都会<b>自动切入到“下载日志”页面</b>并实时呈现滚动的后台转码进度，无需手动查看。
+                <br>
+                4. <b>修改参数</b>：在“配置参数”中可以一键浏览系统目录来修改音频保存目的地或输出质量。
+            </div>
+
+            <div class="about-desc-card" id="about-desc-en" style="display: none;">
+                This program is a dependency-free, high-visual-quality local audio/video extractor powered by Python's built-in HTTP server.
+                <br><br>
+                <b>User Guide:</b>
+                <br>
+                1. <b>Search & Extract</b>: In the "Search & Extract" tab, enter any keyword and click Execute to search. Click the <b>Extract Audio</b> button on the far right of any row to download.
+                <br>
+                2. <b>Direct Extract</b>: Paste a Bilibili link, BV code, or NetEase song link directly into the search input and press Enter to extract without searching.
+                <br>
+                3. <b>Auto Logs Monitor</b>: Triggering any download will automatically switch the view to the "Download Logs" page, rendering real-time scrolling console details.
+                <br>
+                4. <b>Configuration</b>: Browse your local directories in "Settings" to easily modify the download folder, output formats, visual themes, and languages.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification box -->
+    <div class="toast" id="toast-notif"></div>
+
+    <script>
+        // Language dictionaries
+        const i18n = {
+            zh: {
+                "brand-title": "音视频提取器",
+                "nav-search": "搜索提取",
+                "nav-logs": "下载日志",
+                "nav-settings": "配置参数",
+                "nav-about": "关于软件",
+                "footer-version": "本地版本 v2.2",
+                "search-title": "搜索与直接提取",
+                "search-placeholder": "输入歌手名、歌名搜索，或粘贴视频链接/BV号直接回车提取下载",
+                "btn-execute": "执行",
+                "rec-title": "快捷推荐:",
+                "list-title": "检索结果列表",
+                "table-col-title": "标题/歌曲名称",
+                "table-col-author": "UP主/歌手",
+                "table-col-type": "内容类型",
+                "table-col-action": "操作",
+                "table-no-data": "暂无检索数据。输入关键词搜索，或直接粘贴视频链接。",
+                "logs-title": "任务运行与提取日志",
+                "btn-pause": "暂停",
+                "btn-resume": "恢复",
+                "btn-cancel": "终止",
+                "btn-clear": "清空日志",
+                "settings-global": "全局通用配置",
+                "save-dir-title": "音频保存目录",
+                "save-dir-desc": "指定歌曲提取保存的目的地路径。",
+                "btn-change-path": "更改路径",
+                "output-format-title": "默认输出格式",
+                "output-format-desc": "选择输出为 320k 高品质 MP3、无损 FLAC 或保留原格式 M4A。",
+                "theme-title": "界面视觉主题",
+                "theme-desc": "切换应用程序的主题外观（明亮或暗黑）。",
+                "theme-dark": "深邃暗黑 (Dark)",
+                "theme-light": "极简明亮 (Light)",
+                "lang-title": "显示语言",
+                "lang-desc": "切换界面显示的语言（中文或英文）。",
+                "overwrite-title": "同名已存在文件处理",
+                "overwrite-desc": "检测到目标文件夹中已有同名最终音频时，选择覆盖重新下载或直接跳过。",
+                "proxy-title": "网络代理设置",
+                "proxy-desc": "启用代理访问 YouTube 等网站，支持 HTTP/SOCKS5 代理。",
+                "proxy-enable": "启用代理",
+                "settings-bilibili": "Bilibili (B站) 配置",
+                "cookie-title-bili": "B站 Cookie 授权浏览器",
+                "cookie-desc-bili": "若需拉取 B站 1080P 或无损高音质，请在此选择已登录 B站 的浏览器，提取器将自动读取登录凭证。",
+                "btn-go-login-bili": "登录 B站",
+                "delay-title-bili": "B站多分P防风控随机延时",
+                "delay-desc-bili": "在批量下载 B站 多分P播放列表时，每首歌防风控等待的延时范围（5秒到最大秒数之间随机，最大秒数最低为6）。",
+                "settings-youtube": "YouTube (油管) 配置",
+                "cookie-title-yt": "YouTube Cookie 授权浏览器",
+                "cookie-desc-yt": "遇到YouTube机器人校验“Sign in to confirm you’re not a bot”时，请选择已登录 YouTube 账号的浏览器，提取器将自动读取登录状态。",
+                "btn-go-login-yt": "登录 YouTube",
+                "delay-title-yt": "YouTube多分P防风控随机延时",
+                "delay-desc-yt": "在批量下载 YouTube 播放列表/歌单时，每首歌防风控等待的延时范围（5秒到最大秒数之间随机，最大秒数最低为6）。",
+                "delay-to": "至",
+                "delay-range-suffix": "秒之间随机",
+                "toast-delay-min": "防风控最大延时最低设为 6 秒！",
+                "ffmpeg-title": "FFmpeg 转码工具",
+                "ffmpeg-desc": "用于将视频音频流重采样并重新打包转码为 MP3。",
+                "ffmpeg-ready": "环境就绪 (Ready)",
+                "settings-environment": "运行环境配置",
+                "init-env-title": "一键部署专属运行环境",
+                "init-env-desc": "自动在项目目录下创建 python_env 与 ffmpeg_env，下载并部署独立的绿色便携环境。",
+                "btn-init-env": "一键初始化",
+                "python-path-title": "Python 运行环境",
+                "python-path-desc": "自定义 Python 解释器路径。留空则自动探测内置环境或系统路径。",
+                "ffmpeg-path-title": "FFmpeg 转码工具",
+                "ffmpeg-path-desc": "自定义 FFmpeg 可执行文件或目录路径。留空则使用内置转码器。",
+                "btn-verify": "环境校验",
+                "about-header": "音视频提取下载器",
+                "about-sub": "WinUI 3 几何极简网页版 v2.2",
+                "toast-save-dir": "成功更改保存目录！",
+                "toast-rec": "已填入快捷链接，回车或点击“执行”即可下载！",
+                "toast-download-started": "开始提取音频，已为您自动跳转到运行日志页！",
+                "toast-clear-logs": "日志台已成功清空！",
+                "toast-pause": "已成功暂停当前任务！",
+                "toast-resume": "已成功恢复当前任务！",
+                "toast-cancel": "已向后台发送终止指令，正在关闭提取进程...",
+                "alert-confirm-cancel": "确定要强制终止当前正在进行的提取与下载任务吗？",
+                "alert-select-browser": "请先选择一个您要登录的 Cookie 授权浏览器！",
+                "toast-launching-browser": "正在启动浏览器，请登录 B站账号并关闭浏览器！",
+                "cookie-warn-text": "由于您选择了非 MP3 格式（FLAC/M4A），B站必须关联 Cookie 授权浏览器方可提取高音质/无损音频，请在上方选择包含您B站登录状态的浏览器，否则可能仅下载最低的 64k 标准音质。"
+            },
+            en: {
+                "brand-title": "UNIVERSAL DOWNLOADER",
+                "nav-search": "Search & Extract",
+                "nav-logs": "Download Logs",
+                "nav-settings": "Settings",
+                "nav-about": "About App",
+                "footer-version": "Build Version 2.2",
+                "search-title": "Search & Direct Download",
+                "search-placeholder": "Enter search terms, or paste video URL/BV code and press enter to extract",
+                "btn-execute": "Execute",
+                "rec-title": "Quick Recs:",
+                "list-title": "Search Results",
+                "table-col-title": "Title / Video Name",
+                "table-col-author": "Author / Singer",
+                "table-col-type": "Content Type",
+                "table-col-action": "Action",
+                "table-no-data": "No search data. Enter keywords or paste a video link to begin.",
+                "logs-title": "Task Runner & Extraction Logs",
+                "btn-pause": "Pause",
+                "btn-resume": "Resume",
+                "btn-cancel": "Cancel",
+                "btn-clear": "Clear Logs",
+                "settings-global": "Global Configurations",
+                "save-dir-title": "Audio Save Directory",
+                "save-dir-desc": "Specify the destination path where the extracted audio will be saved.",
+                "btn-change-path": "Change Path",
+                "output-format-title": "Default Output Format",
+                "output-format-desc": "Choose between 320k High-Quality MP3, Lossless FLAC, or Original M4A.",
+                "theme-title": "UI Theme",
+                "theme-desc": "Toggle the visual appearance of the application (Light or Dark).",
+                "theme-dark": "Deep Dark",
+                "theme-light": "Minimal Light",
+                "lang-title": "Display Language",
+                "lang-desc": "Switch the displayed language of the application interface.",
+                "overwrite-title": "Existing File Handling",
+                "overwrite-desc": "Choose whether to overwrite or skip when the target audio file already exists.",
+                "proxy-title": "Network Proxy Settings",
+                "proxy-desc": "Enable proxy to access YouTube and other overseas sites. Supports HTTP/SOCKS5.",
+                "proxy-enable": "Enable Proxy",
+                "settings-bilibili": "Bilibili (B站) Configurations",
+                "cookie-title-bili": "Bilibili Cookie Browser",
+                "cookie-desc-bili": "To fetch Bilibili 1080P or Lossless high-quality audio, select the browser containing your Bilibili login credentials.",
+                "btn-go-login-bili": "Log In Bilibili",
+                "delay-title-bili": "Bilibili Anti-Ban Delay",
+                "delay-desc-bili": "Randomized wait duration range between Bilibili songs (random between 5s and your Bilibili maximum, max must be at least 6s).",
+                "settings-youtube": "YouTube (油管) Configurations",
+                "cookie-title-yt": "YouTube Cookie Browser",
+                "cookie-desc-yt": "If you encounter YouTube's 'Sign in to confirm you’re not a bot' check, select the browser containing your YouTube login credentials.",
+                "btn-go-login-yt": "Log In YouTube",
+                "delay-title-yt": "YouTube Anti-Ban Delay",
+                "delay-desc-yt": "Randomized wait duration range between YouTube songs (random between 5s and your YouTube maximum, max must be at least 6s).",
+                "delay-to": "to",
+                "delay-range-suffix": "s (randomized)",
+                "toast-delay-min": "Max anti-ban delay must be at least 6 seconds!",
+                "ffmpeg-title": "FFmpeg Transcoder Tool",
+                "ffmpeg-desc": "Used to resample video audio streams and transcode/remux into MP3 format.",
+                "ffmpeg-ready": "Ready",
+                "settings-environment": "Running Environment Configurations",
+                "init-env-title": "One-click Setup Portable Environment",
+                "init-env-desc": "Automatically create python_env and ffmpeg_env directories, downloading and configuring separate portable runtimes.",
+                "btn-init-env": "Setup Env",
+                "python-path-title": "Python Environment",
+                "python-path-desc": "Custom Python interpreter path. Leave empty for auto-detection.",
+                "ffmpeg-path-title": "FFmpeg Transcoder Tool",
+                "ffmpeg-path-desc": "Custom FFmpeg executable or directory path. Leave empty for local built-in.",
+                "btn-verify": "Verify Env",
+                "about-header": "Universal Downloader",
+                "about-sub": "WinUI 3 Geometric Minimalist Web Version v2.2",
+                "toast-save-dir": "Save directory successfully changed!",
+                "toast-rec": "Quick link filled! Press Enter or click Execute to download.",
+                "toast-download-started": "Audio extraction started! Redirecting to log page.",
+                "toast-clear-logs": "Log console cleared successfully!",
+                "toast-pause": "Current task paused successfully!",
+                "toast-resume": "Current task resumed successfully!",
+                "toast-cancel": "Cancellation command sent to backend, terminating processes...",
+                "alert-confirm-cancel": "Are you sure you want to forcibly terminate the current extraction and download task?",
+                "alert-select-browser": "Please choose a Cookie authorized browser first!",
+                "toast-launching-browser": "Launching browser, please log in to Bilibili and then close it!",
+                "cookie-warn-text": "Since you chose a non-MP3 format (FLAC/M4A), Bilibili requires Cookie browser authorization to extract high-quality/lossless audio. Please select the browser containing your Bilibili login credentials above, otherwise only the lowest 64k standard audio will be downloaded."
+            }
+        };
+
+        let currentLang = 'zh';
+
+        function applyLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang] && i18n[lang][key]) {
+                    if (el.tagName === 'INPUT' && el.type === 'text') {
+                        el.placeholder = i18n[lang][key];
+                    } else {
+                        el.textContent = i18n[lang][key];
+                    }
+                }
+            });
+            
+            // Toggle about description card view
+            if (lang === 'zh') {
+                document.getElementById('about-desc-zh').style.display = 'block';
+                document.getElementById('about-desc-en').style.display = 'none';
+            } else {
+                document.getElementById('about-desc-zh').style.display = 'none';
+                document.getElementById('about-desc-en').style.display = 'block';
+            }
+            
+            const overwriteEnableEl = document.getElementById('settings-overwrite-enable');
+            if (overwriteEnableEl) {
+                updateOverwriteLabel(overwriteEnableEl.checked);
+            }
+        }
+
+        function saveConfigToServer(data) {
+            fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .catch(err => console.error('Failed to sync config to server:', err));
+        }
+
+        function savePythonPathSetting() {
+            const val = document.getElementById('settings-python-path').value.trim();
+            saveConfigToServer({ python_path: val });
+        }
+
+        function saveFFmpegPathSetting() {
+            const val = document.getElementById('settings-ffmpeg-path').value.trim();
+            saveConfigToServer({ ffmpeg_path: val });
+        }
+
+        function verifyPython() {
+            const pathInput = document.getElementById('settings-python-path').value.trim();
+            const statusEl = document.getElementById('status-verify-python');
+            statusEl.style.display = 'flex';
+            statusEl.style.color = '#94a3b8'; // gray
+            statusEl.innerHTML = `<span>${currentLang === 'zh' ? '正在校验环境...' : 'Verifying environment...'}</span>`;
+            
+            fetch('/api/verify_python', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ python_path: pathInput })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    statusEl.style.color = '#4ade80'; // green
+                    statusEl.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>${currentLang === 'zh' ? '校验正常' : 'Ready'}: ${data.version} (${data.path})</span>
+                    `;
+                } else {
+                    statusEl.style.color = '#f87171'; // red
+                    statusEl.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <span>${currentLang === 'zh' ? '校验失败' : 'Failed'}: ${data.error}</span>
+                    `;
+                }
+            })
+            .catch(err => {
+                statusEl.style.color = '#f87171';
+                statusEl.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span>${currentLang === 'zh' ? '无法连接本地后台服务' : 'Cannot connect to backend server'}</span>
+                `;
+            });
+        }
+
+        function verifyFFmpeg() {
+            const pathInput = document.getElementById('settings-ffmpeg-path').value.trim();
+            const statusEl = document.getElementById('status-verify-ffmpeg');
+            statusEl.style.display = 'flex';
+            statusEl.style.color = '#94a3b8'; // gray
+            statusEl.innerHTML = `<span>${currentLang === 'zh' ? '正在校验环境...' : 'Verifying environment...'}</span>`;
+            
+            fetch('/api/verify_ffmpeg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ffmpeg_path: pathInput })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    statusEl.style.color = '#4ade80'; // green
+                    statusEl.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>${currentLang === 'zh' ? '校验正常' : 'Ready'}: ${data.version} (${data.path})</span>
+                    `;
+                } else {
+                    statusEl.style.color = '#f87171'; // red
+                    statusEl.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <span>${currentLang === 'zh' ? '校验失败' : 'Failed'}: ${data.error}</span>
+                    `;
+                }
+            })
+            .catch(err => {
+                statusEl.style.color = '#f87171';
+                statusEl.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span>${currentLang === 'zh' ? '无法连接本地后台服务' : 'Cannot connect to backend server'}</span>
+                `;
+            });
+        }
+
+        function saveAudioFormatSetting() {
+            const val = document.getElementById('settings-audio-format').value;
+            saveConfigToServer({ format: val });
+            checkCookieTip();
+        }
+
+        function changeLanguage() {
+            currentLang = document.getElementById('settings-lang').value;
+            applyLanguage(currentLang);
+            saveConfigToServer({ lang: currentLang });
+        }
+
+        // Theme Switcher
+        function changeTheme() {
+            const theme = document.getElementById('settings-theme').value;
+            const root = document.documentElement;
+            if (theme === 'light') {
+                root.classList.remove('theme-dark');
+                root.classList.add('theme-light');
+            } else {
+                root.classList.remove('theme-light');
+                root.classList.add('theme-dark');
+            }
+            saveConfigToServer({ theme: theme });
+        }
+
+        // Tab Switcher
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+            
+            el.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Load configs and settings on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('/api/config')
+                .then(res => res.json())
+                .then(data => {
+                    // Populate save directory
+                    document.getElementById('settings-save-dir').value = data.save_dir;
+                    
+                    // Populate environment paths
+                    document.getElementById('settings-python-path').value = data.python_path || '';
+                    document.getElementById('settings-ffmpeg-path').value = data.ffmpeg_path || '';
+                    
+                    // Run initial verification checks
+                    verifyPython();
+                    verifyFFmpeg();
+                    
+                    // Populate audio format
+                    document.getElementById('settings-audio-format').value = data.format;
+                    
+                    // Populate theme
+                    document.getElementById('settings-theme').value = data.theme;
+                    // Apply theme immediately
+                    const root = document.documentElement;
+                    if (data.theme === 'light') {
+                        root.classList.remove('theme-dark');
+                        root.classList.add('theme-light');
+                    } else {
+                        root.classList.remove('theme-light');
+                        root.classList.add('theme-dark');
+                    }
+                    
+                    // Populate language
+                    document.getElementById('settings-lang').value = data.lang;
+                    currentLang = data.lang;
+                    applyLanguage(data.lang);
+                    
+                    // Populate proxy
+                    document.getElementById('settings-proxy').value = data.proxy;
+                    document.getElementById('settings-proxy-enable').checked = data.proxy_enable;
+                    document.getElementById('settings-proxy').disabled = !data.proxy_enable;
+                    
+                    // Populate cookies
+                    document.getElementById('settings-cookie-browser-bili').value = data.cookie_browser_bili;
+                    document.getElementById('settings-cookie-browser-yt').value = data.cookie_browser_yt;
+                    
+                    // Populate overwrite setting
+                    const overwriteExisting = data.overwrite_existing !== false;
+                    document.getElementById('settings-overwrite-enable').checked = overwriteExisting;
+                    updateOverwriteLabel(overwriteExisting);
+                    
+                    // Populate delays
+                    document.getElementById('settings-delay-max-bili').value = data.delay_max_bili;
+                    document.getElementById('settings-delay-max-yt').value = data.delay_max_yt;
+                    
+                    // Run initial check
+                    checkCookieTip();
+                    
+                    const loginBtnYt = document.getElementById('btn-browser-login-yt');
+                    if (loginBtnYt) {
+                        loginBtnYt.disabled = (data.cookie_browser_yt === '无 (None)');
+                    }
+                });
+                
+            // Set polling loops
+            setInterval(pollLogs, 800);
+            setInterval(pollStatus, 1000);
+        });
+
+        // Toast helper
+        function showToast(message) {
+            const toast = document.getElementById('toast-notif');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Browse directories via filedialog
+        function browseDirectory() {
+            fetch('/api/browse')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.path) {
+                        document.getElementById('settings-save-dir').value = data.path;
+                        showToast(i18n[currentLang]["toast-save-dir"]);
+                    }
+                });
+        }
+
+        // Quick Recommendation loader
+        function loadRec(url) {
+            document.getElementById('search-keyword').value = url;
+            showToast(i18n[currentLang]["toast-rec"]);
+            
+            const el = document.getElementById('search-keyword');
+            el.style.borderColor = '#6366f1';
+            el.style.boxShadow = '0 0 8px rgba(99, 102, 241, 0.4)';
+            setTimeout(() => {
+                el.style.borderColor = '';
+                el.style.boxShadow = '';
+            }, 800);
+        }
+
+        // Main action: Check if URL or Search Keyword
+        function triggerSearchOrDownload() {
+            const keyword = document.getElementById('search-keyword').value.trim();
+            if (!keyword) {
+                alert(currentLang === 'zh' ? '请输入搜索内容或音频链接！' : 'Please enter search keywords or audio link!');
+                return;
+            }
+
+            // Check if input is a URL
+            const isUrl = keyword.startsWith('http://') || keyword.startsWith('https://') || /^[a-zA-Z0-9_-]{8,15}$/.test(keyword) || keyword.includes('BV');
+            
+            if (isUrl) {
+                triggerDownload(keyword);
+            } else {
+                triggerSearch(keyword);
+            }
+        }
+
+        // Search platform keyword
+        function triggerSearch(keyword) {
+            const platform = document.getElementById('search-platform').value;
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 50px 0;">${currentLang === 'zh' ? '正在检索中，请稍候...' : 'Searching, please wait...'}</td></tr>`;
+            const proxyEnable = localStorage.getItem('network-proxy-enable') === 'true';
+            const proxy = proxyEnable ? (localStorage.getItem('network-proxy') || 'http://127.0.0.1:7890') : '';
+            const cookieBrowserYt = document.getElementById('settings-cookie-browser-yt').value;
+
+            fetch(`/api/search?platform=${encodeURIComponent(platform)}&keyword=${encodeURIComponent(keyword)}&proxy=${encodeURIComponent(proxy)}&cookie_browser_yt=${encodeURIComponent(cookieBrowserYt)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ff6b6b; padding: 50px 0;">${currentLang === 'zh' ? '检索失败' : 'Search failed'}: ${data.error}</td></tr>`;
+                        return;
+                    }
+                    if (data.results.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 50px 0;">${currentLang === 'zh' ? '未搜索到相关音视频。' : 'No matching audio/video found.'}</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = '';
+                    data.results.forEach(item => {
+                        const tr = document.createElement('tr');
+                        
+                        const tdAction = document.createElement('td');
+                        tdAction.style.textAlign = 'center';
+                        
+                        const btnDl = document.createElement('button');
+                        btnDl.className = 'btn-dl-inline';
+                        btnDl.innerHTML = `
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            ${currentLang === 'zh' ? '提取音频' : 'Extract Audio'}
+                        `;
+                        btnDl.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            triggerDownload(item.link);
+                        });
+                        tdAction.appendChild(btnDl);
+
+                        tr.innerHTML = `
+                            <td title="${item.title}" style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title}</td>
+                            <td title="${item.author}" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.author}</td>
+                            <td style="text-align: center;">${item.type}</td>
+                        `;
+                        tr.appendChild(tdAction);
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ff6b6b; padding: 50px 0;">${currentLang === 'zh' ? '接口连接失败，检索终止。' : 'API connection failed, search aborted.'}</td></tr>`;
+                });
+        }
+
+        // Trigger Download
+        function triggerDownload(link) {
+            const save_dir = document.getElementById('settings-save-dir').value.trim();
+            const format = document.getElementById('settings-audio-format').value;
+            const cookieBrowserBili = document.getElementById('settings-cookie-browser-bili').value;
+            const cookieBrowserYt = document.getElementById('settings-cookie-browser-yt').value;
+            
+            const isYt = link.includes('youtube.com') || link.includes('youtu.be') || link.includes('youtube') || link.includes('youtu');
+            const delayMax = isYt ? 
+                (parseInt(document.getElementById('settings-delay-max-yt').value) || 10) :
+                (parseInt(document.getElementById('settings-delay-max-bili').value) || 10);
+            
+            const proxyEnable = localStorage.getItem('network-proxy-enable') === 'true';
+            const proxy = proxyEnable ? (localStorage.getItem('network-proxy') || 'http://127.0.0.1:7890') : '';
+
+            // Call download API
+            fetch('/api/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    link: link,
+                    save_dir: save_dir,
+                    format: format,
+                    cookie_browser_bili: cookieBrowserBili,
+                    cookie_browser_yt: cookieBrowserYt,
+                    delay_max: delayMax,
+                    proxy: proxy
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    showToast(i18n[currentLang]["toast-download-started"]);
+                    
+                    // Show progress bar
+                    document.getElementById('mini-progress').style.display = 'flex';
+                    updateMiniProgress(0);
+                    
+                    // Switch tab to Logs View immediately
+                    switchTab('tab-logs', document.getElementById('nav-logs'));
+                }
+            })
+            .catch(err => {
+                alert(currentLang === 'zh' ? '启动下载任务失败，请检查本地服务状态！' : 'Failed to trigger task, check local backend server status!');
+            });
+        }
+
+        // Update progress bar helper
+        function updateMiniProgress(percent) {
+            const fill = document.getElementById('mini-progress-fill');
+            const txt = document.getElementById('mini-percent');
+            fill.style.width = `${percent}%`;
+            txt.textContent = `${percent.toFixed(0)}%`;
+        }
+
+        // Poll logs incrementally
+        function pollLogs() {
+            fetch('/api/logs')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.logs && data.logs.length > 0) {
+                        const consoleBox = document.getElementById('console-box');
+                        data.logs.forEach(line => {
+                            consoleBox.textContent += line + '\n';
+                            
+                            // Parse progress percentage
+                            let match = line.match(/\[下载进度\]\s*([\d\.]+)%/);
+                            if (!match) {
+                                match = line.match(/\[download\]\s*([\d\.]+)%/);
+                            }
+                            if (match) {
+                                let percent = parseFloat(match[1]);
+                                if (!isNaN(percent)) {
+                                    updateMiniProgress(percent);
+                                }
+                            }
+                            
+                            // Check conversion complete
+                            if (line.includes('[转换完成]') || line.includes('[音频转码]')) {
+                                updateMiniProgress(100);
+                            }
+                        });
+                        consoleBox.scrollTop = consoleBox.scrollHeight;
+                    }
+                });
+        }
+
+        let isTaskPausedGlobal = false;
+
+        function togglePauseTask() {
+            const btn = document.getElementById('btn-pause-task');
+            const targetApi = isTaskPausedGlobal ? '/api/resume' : '/api/pause';
+            
+            fetch(targetApi, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    isTaskPausedGlobal = !isTaskPausedGlobal;
+                    btn.textContent = isTaskPausedGlobal ? i18n[currentLang]["btn-resume"] : i18n[currentLang]["btn-pause"];
+                    btn.style.backgroundColor = isTaskPausedGlobal ? '#6366f1' : 'var(--bg-main)';
+                    showToast(isTaskPausedGlobal ? i18n[currentLang]["toast-pause"] : i18n[currentLang]["toast-resume"]);
+                })
+                .catch(err => {
+                    showToast(currentLang === 'zh' ? '操作失败，服务未响应' : 'Operation failed, server unreachable');
+                });
+        }
+
+        function cancelTask() {
+            const title = currentLang === 'zh' ? '终止当前提取任务' : 'Terminate Task';
+            const msg = i18n[currentLang]["alert-confirm-cancel"];
+            showCustomModal(title, msg, () => {
+                const cancelBtn = document.getElementById('btn-cancel-task');
+                cancelBtn.disabled = true;
+                showToast(i18n[currentLang]["toast-cancel"]);
+                
+                fetch('/api/cancel', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        cancelBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        showToast(currentLang === 'zh' ? '操作失败，服务未响应' : 'Operation failed, server unreachable');
+                        cancelBtn.disabled = false;
+                    });
+            }, currentLang === 'zh' ? '强行终止' : 'Force Terminate', currentLang === 'zh' ? '取消' : 'Cancel');
+        }
+
+        function clearLogs() {
+            document.getElementById('console-box').textContent = '';
+            showToast(i18n[currentLang]["toast-clear-logs"]);
+        }
+
+        function checkCookieTip() {
+            const format = document.getElementById('settings-audio-format').value;
+            const cookieBrowserBili = document.getElementById('settings-cookie-browser-bili').value;
+            const banner = document.getElementById('cookie-warning-banner');
+            const loginBtnBili = document.getElementById('btn-browser-login-bili');
+            
+            if (loginBtnBili) {
+                loginBtnBili.disabled = (cookieBrowserBili === '无 (None)');
+            }
+            
+            if (!banner) return;
+            
+            if (format !== 'MP3 (320kbps)' && cookieBrowserBili === '无 (None)') {
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        function saveCookieBrowserBili() {
+            const val = document.getElementById('settings-cookie-browser-bili').value;
+            saveConfigToServer({ cookie_browser_bili: val });
+            checkCookieTip();
+        }
+
+        function saveCookieBrowserYt() {
+            const val = document.getElementById('settings-cookie-browser-yt').value;
+            saveConfigToServer({ cookie_browser_yt: val });
+            
+            const loginBtnYt = document.getElementById('btn-browser-login-yt');
+            if (loginBtnYt) {
+                loginBtnYt.disabled = (val === '无 (None)');
+            }
+        }
+
+        function openBrowserLogin(platform) {
+            const selectId = platform === 'youtube' ? 'settings-cookie-browser-yt' : 'settings-cookie-browser-bili';
+            const browser = document.getElementById(selectId).value;
+            if (browser === '无 (None)') {
+                alert(i18n[currentLang]["alert-select-browser"]);
+                return;
+            }
+            
+            fetch('/api/open_browser_login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ browser: browser, platform: platform })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(i18n[currentLang]["toast-launching-browser"]);
+                } else {
+                    alert(`拉起浏览器失败: ${data.error}`);
+                }
+            })
+            .catch(err => {
+                showToast(currentLang === 'zh' ? '无法连接本地后台服务' : 'Cannot connect to backend server');
+            });
+        }
+
+        function saveProxySetting() {
+            const enable = document.getElementById('settings-proxy-enable').checked;
+            const val = document.getElementById('settings-proxy').value.trim();
+            document.getElementById('settings-proxy').disabled = !enable;
+            saveConfigToServer({ proxy_enable: enable, proxy: val });
+        }
+
+        function updateOverwriteLabel(enable) {
+            const statusEl = document.getElementById('label-overwrite-status');
+            if (enable) {
+                statusEl.textContent = currentLang === 'zh' ? '覆盖重新下载 (Overwrite)' : 'Overwrite';
+            } else {
+                statusEl.textContent = currentLang === 'zh' ? '跳过忽略 (Skip)' : 'Skip';
+            }
+        }
+
+        function saveOverwriteSetting() {
+            const enable = document.getElementById('settings-overwrite-enable').checked;
+            updateOverwriteLabel(enable);
+            saveConfigToServer({ overwrite_existing: enable });
+        }
+
+        function initEnvironment() {
+            const title = currentLang === 'zh' ? '部署专属运行环境' : 'Setup Environment';
+            const confirmMsg = currentLang === 'zh' 
+                ? '确定要开始一键部署专属运行环境吗？这将会自动下载便携式 Python (Python 3.10.11) 和 FFmpeg 并配置依赖，需要几分钟时间，您可以在“下载日志”中实时查看进度。' 
+                : 'Are you sure you want to initialize the local portable environments? This will download Python and FFmpeg (takes a few minutes). You can view the live progress in the "Download Logs" tab.';
+                
+            showCustomModal(title, confirmMsg, () => {
+                const btn = document.getElementById('btn-init-env');
+                btn.disabled = true;
+                
+                fetch('/api/init_env', {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(currentLang === 'zh' ? '已成功启动环境部署！正在为您跳转到运行日志页。' : 'Environment setup started! Redirecting to logs.');
+                        setTimeout(() => {
+                            switchTab('tab-logs', document.getElementById('nav-logs'));
+                            btn.disabled = false;
+                        }, 1200);
+                    } else {
+                        const errMsg = currentLang === 'zh' 
+                            ? '启动初始化任务失败，可能有任务已在运行中。' 
+                            : 'Failed to start setup task. Is a task already running?';
+                        alert(errMsg);
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    alert('Error: ' + err);
+                    btn.disabled = false;
+                });
+            }, currentLang === 'zh' ? '开始部署' : 'Start Setup', currentLang === 'zh' ? '取消' : 'Cancel');
+        }
+
+        function validateDelayMaxBiliInput() {
+            const input = document.getElementById('settings-delay-max-bili');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 6) {
+                input.value = 6;
+                showToast(i18n[currentLang]["toast-delay-min"]);
+            }
+            saveConfigToServer({ delay_max_bili: val });
+        }
+
+        function validateDelayMaxYtInput() {
+            const input = document.getElementById('settings-delay-max-yt');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 6) {
+                input.value = 6;
+                showToast(i18n[currentLang]["toast-delay-min"]);
+            }
+            saveConfigToServer({ delay_max_yt: val });
+        }
+
+        // Poll server status
+        let wasInProgressLastTime = false;
+
+        function pollStatus() {
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    const searchExecBtn = document.querySelector('#tab-search button[onclick="triggerSearchOrDownload()"]');
+                    const inlineDlBtns = document.querySelectorAll('.btn-dl-inline');
+                    const recBadges = document.querySelectorAll('.rec-badge');
+                    
+                    const pauseBtn = document.getElementById('btn-pause-task');
+                    const cancelBtn = document.getElementById('btn-cancel-task');
+                    
+                    if (data.in_progress) {
+                        // Enable task progress UI
+                        document.getElementById('mini-progress').style.display = 'flex';
+                        
+                        // Enable controls
+                        if (pauseBtn) {
+                            pauseBtn.disabled = false;
+                            isTaskPausedGlobal = !!data.paused;
+                            pauseBtn.textContent = isTaskPausedGlobal ? i18n[currentLang]["btn-resume"] : i18n[currentLang]["btn-pause"];
+                            pauseBtn.style.backgroundColor = isTaskPausedGlobal ? '#6366f1' : 'var(--bg-main)';
+                        }
+                        if (cancelBtn) {
+                            cancelBtn.disabled = false;
+                        }
+                        
+                        // Disable trigger buttons to prevent multiple tasks
+                        if (searchExecBtn) {
+                            searchExecBtn.disabled = true;
+                            searchExecBtn.textContent = currentLang === 'zh' ? '任务正在提取中...' : 'Extracting task...';
+                        }
+                        inlineDlBtns.forEach(btn => {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                            btn.style.cursor = 'not-allowed';
+                        });
+                        recBadges.forEach(badge => {
+                            badge.style.opacity = '0.4';
+                            badge.style.pointerEvents = 'none';
+                        });
+                        
+                        wasInProgressLastTime = true;
+                    } else {
+                        // Disable controls when idle
+                        if (pauseBtn) {
+                            pauseBtn.disabled = true;
+                            pauseBtn.textContent = i18n[currentLang]["btn-pause"];
+                            pauseBtn.style.backgroundColor = 'var(--bg-main)';
+                        }
+                        if (cancelBtn) {
+                            cancelBtn.disabled = true;
+                        }
+                        
+                        // Restore buttons
+                        if (searchExecBtn) {
+                            searchExecBtn.disabled = false;
+                            searchExecBtn.textContent = i18n[currentLang]["btn-execute"];
+                        }
+                        inlineDlBtns.forEach(btn => {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                        });
+                        recBadges.forEach(badge => {
+                            badge.style.opacity = '1';
+                            badge.style.pointerEvents = 'auto';
+                        });
+                        
+                        // Hide mini progress bar when idle with a delay if it was just completed
+                        if (wasInProgressLastTime) {
+                            wasInProgressLastTime = false;
+                            if (document.getElementById('mini-percent').textContent === '100%') {
+                                setTimeout(() => {
+                                    // Check status again to make sure a new task hasn't started
+                                    fetch('/api/status')
+                                        .then(r => r.json())
+                                        .then(d => {
+                                            if (!d.in_progress) {
+                                                document.getElementById('mini-progress').style.display = 'none';
+                                                document.getElementById('mini-percent').textContent = '0%';
+                                                document.getElementById('mini-progress-fill').style.width = '0%';
+                                            }
+                                        });
+                                }, 5000);
+                            } else {
+                                document.getElementById('mini-progress').style.display = 'none';
+                            }
+                        } else {
+                            // If idle and not just finished, hide progress bar
+                            if (document.getElementById('mini-progress').style.display !== 'none') {
+                                document.getElementById('mini-progress').style.display = 'none';
+                            }
+                        }
+                    }
+                });
+        }
+
+        // Custom Premium Modal Dialog JS API
+        let modalConfirmCallback = null;
+
+        function showCustomModal(title, message, onConfirm, confirmText = null, cancelText = null) {
+            document.getElementById('modal-title-text').textContent = title;
+            document.getElementById('modal-body-text').textContent = message;
+            
+            const confirmBtn = document.getElementById('modal-btn-confirm');
+            const cancelBtn = document.getElementById('modal-btn-cancel');
+            
+            confirmBtn.textContent = confirmText || (currentLang === 'zh' ? '确定' : 'Confirm');
+            cancelBtn.textContent = cancelText || (currentLang === 'zh' ? '取消' : 'Cancel');
+            
+            modalConfirmCallback = onConfirm;
+            
+            confirmBtn.onclick = () => {
+                closeCustomModal();
+                if (modalConfirmCallback) modalConfirmCallback();
+            };
+            
+            const overlay = document.getElementById('custom-modal');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.classList.add('active');
+            }, 10);
+        }
+
+        function closeCustomModal() {
+            const overlay = document.getElementById('custom-modal');
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                modalConfirmCallback = null;
+            }, 200);
+        }
+    </script>
+
+    <!-- Reusable Custom Premium Modal Dialog -->
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span id="modal-title-text" style="font-weight: 700; font-size: 16px; font-family: var(--font-heading); color: var(--text-color);">确认操作</span>
+                <button class="modal-close-btn" onclick="closeCustomModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body-text" style="font-size: 13.5px; line-height: 1.6; color: var(--text-muted); margin-top: 12px; margin-bottom: 24px; font-family: var(--font-body);">
+                确定要执行此操作吗？
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="modal-btn-cancel" class="btn-secondary" style="padding: 10px 20px; font-size: 13px; font-weight: 600;" onclick="closeCustomModal()">取消</button>
+                <button id="modal-btn-confirm" class="btn-accent" style="padding: 10px 24px; font-size: 13px; font-weight: 600;">确定</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

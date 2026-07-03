@@ -1,0 +1,81 @@
+{
+    // =========================================================================
+    // 软件核心运行路径配置 (Software Core Paths Configuration)
+    // =========================================================================
+    
+    // 自定义 Python 解释器可执行文件路径。
+    // 留空 "" 则自动探测同级目录下的 venv、python_env 或系统全局 Python 环境。
+    // (Custom Python interpreter path. Leave empty "" for auto-detection).
+    "python_path": "",
+
+    // 自定义 FFmpeg 目录或可执行文件路径（例如 "C:\\tools\\ffmpeg" 或 "C:\\tools\\ffmpeg.exe"）。
+    // 留空 "" 则自动使用软件根目录下的 ffmpeg.exe 与 ffprobe.exe。
+    // (Custom FFmpeg path. Leave empty "" to use local ffmpeg.exe).
+    "ffmpeg_path": "",
+
+    // =========================================================================
+    // 下载与保存选项 (Download and Save Options)
+    // =========================================================================
+    
+    // 音频文件保存目录路径。
+    // (Directory path where downloaded audio files will be saved).
+    "save_dir": "D:\\program\\my\\universal_downloader\\download",
+
+    // 默认提取输出格式。支持："MP3 (320kbps)"、"FLAC (无损)"、"M4A (原音质)"。
+    // (Default audio extraction output format).
+    "format": "MP3 (320kbps)",
+
+    // 已存在同名音频文件时的处理方式 (true 表示覆盖重新下载，false 表示跳过)。
+    // (Action when output file already exists: true to overwrite, false to skip).
+    "overwrite_existing": false,
+
+    // =========================================================================
+    // 界面与语言设置 (UI Theme and Language Options)
+    // =========================================================================
+    
+    // 界面视觉主题。支持："dark" (深邃暗黑) 或 "light" (极简明亮)。
+    // (Visual layout theme: "dark" or "light").
+    "theme": "dark",
+
+    // 默认显示语言。支持："zh" (简体中文) 或 "en" (English)。
+    // (Interface language: "zh" or "en").
+    "lang": "zh",
+
+    // =========================================================================
+    // 网络代理设置 (Network Proxy Options)
+    // =========================================================================
+    
+    // 是否启用网络代理 (true / false)。
+    // (Toggle switch to enable/disable network proxy).
+    "proxy_enable": false,
+
+    // 代理连接服务器地址。支持 HTTP, HTTPS 或 SOCKS5（默认推荐 http://127.0.0.1:7890）。
+    // (Proxy server address. Supports HTTP, HTTPS, or SOCKS5).
+    "proxy": "http://127.0.0.1:7890",
+
+    // =========================================================================
+    // 账号授权 Cookie 浏览器 (B站/YouTube 独立配置)
+    // =========================================================================
+    
+    // 提取高音质 B站 音频时使用的浏览器登录凭证 Cookie 来源。
+    // 可选："无 (None)"、"chrome"、"edge"、"firefox"。
+    // (Bilibili Cookie browser source to authenticate requests).
+    "cookie_browser_bili": "无 (None)",
+
+    // 下载 YouTube 音视频防人机检测时使用的浏览器登录凭证 Cookie 来源。
+    // 可选："无 (None)"、"chrome"、"edge"、"firefox"。
+    // (YouTube Cookie browser source to authenticate requests).
+    "cookie_browser_yt": "无 (None)",
+
+    // =========================================================================
+    // 分P防风控随机延时上限（单位：秒，最低为 6）
+    // =========================================================================
+    
+    // B站批量下载多分P时的防风控随机延时最大秒数上限。
+    // (Bilibili maximum randomized sleep interval in seconds, minimum 6).
+    "delay_max_bili": 10,
+
+    // YouTube下载歌单/批量任务时的防风控随机延时最大秒数上限。
+    // (YouTube maximum randomized sleep interval in seconds, minimum 6).
+    "delay_max_yt": 10
+}

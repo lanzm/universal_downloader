@@ -1,0 +1,29 @@
+# Large portable environments
+python_env/
+ffmpeg_env/
+
+# Downloaded files and user logs
+download/
+logs/
+
+# Python compiled binaries & caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# System and editor config
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
