@@ -20,8 +20,8 @@ def load_config():
         "lang": "zh",
         "proxy_enable": False,
         "proxy": "http://127.0.0.1:7890",
-        "cookie_browser_bili": "无 (None)",
-        "cookie_browser_yt": "无 (None)",
+        "cookie_bili_raw": "",
+        "cookie_yt_raw": "",
         "delay_max_bili": 10,
         "delay_max_yt": 10
     }
@@ -106,18 +106,16 @@ def save_config(config_data):
     "proxy": "{config_data.get('proxy', 'http://127.0.0.1:7890')}",
 
     // =========================================================================
-    // 账号授权 Cookie 浏览器 (B站/YouTube 独立配置)
+    // 账号授权 Cookie (B站/YouTube 独立配置)
     // =========================================================================
     
-    // 提取高音质 B站 音频时使用的浏览器登录凭证 Cookie 来源。
-    // 可选："无 (None)"、"chrome"、"edge"、"firefox"。
-    // (Bilibili Cookie browser source to authenticate requests).
-    "cookie_browser_bili": "{config_data.get('cookie_browser_bili', '无 (None)')}",
+    // 粘贴的 B站 Cookie 原始字符串。
+    // (Pasted raw Cookie string for Bilibili).
+    "cookie_bili_raw": {json.dumps(config_data.get('cookie_bili_raw', ''))},
 
-    // 下载 YouTube 音视频防人机检测时使用的浏览器登录凭证 Cookie 来源。
-    // 可选："无 (None)"、"chrome"、"edge"、"firefox"。
-    // (YouTube Cookie browser source to authenticate requests).
-    "cookie_browser_yt": "{config_data.get('cookie_browser_yt', '无 (None)')}",
+    // 粘贴的 YouTube Cookie 原始字符串。
+    // (Pasted raw Cookie string for YouTube).
+    "cookie_yt_raw": {json.dumps(config_data.get('cookie_yt_raw', ''))},
 
     // =========================================================================
     // 分P防风控随机延时上限（单位：秒，最低为 6）
@@ -210,7 +208,6 @@ class WebHandler(BaseHTTPRequestHandler):
             platform = query.get("platform", ["Bilibili"])[0]
             keyword = query.get("keyword", [""])[0]
             proxy = query.get("proxy", [""])[0]
-            cookie_browser_yt = query.get("cookie_browser_yt", ["无 (None)"])[0]
             results = []
             error_msg = ""
             
@@ -220,7 +217,7 @@ class WebHandler(BaseHTTPRequestHandler):
                     if platform == "Bilibili":
                         results = engine.search_bilibili_api(keyword, proxy=proxy)
                     elif platform == "YouTube":
-                        results = engine.search_youtube(keyword, proxy=proxy, cookie_browser=cookie_browser_yt)
+                        results = engine.search_youtube(keyword, proxy=proxy)
                     else:
                         results = engine.search_netease_api(keyword, proxy=proxy)
                     add_log(f"【搜索完毕】成功检索到 {len(results)} 条记录。")
@@ -268,8 +265,6 @@ class WebHandler(BaseHTTPRequestHandler):
             link = params.get("link", "").strip()
             save_dir = params.get("save_dir", "").strip() or DEFAULT_DOWNLOAD_DIR
             format_sel = params.get("format", "MP3 (320kbps)")
-            cookie_browser_bili = params.get("cookie_browser_bili", "无 (None)")
-            cookie_browser_yt = params.get("cookie_browser_yt", "无 (None)")
             delay_max = params.get("delay_max", 10)
             proxy = params.get("proxy", "").strip()
             try:
@@ -310,15 +305,10 @@ class WebHandler(BaseHTTPRequestHandler):
             add_log(f"【配置信息】保存格式: {format_sel} | 保存位置: {save_dir} | 同名处理: {overwrite_text} | 防风控随机延时: 5.0s - {delay_max:.1f}s")
             if proxy:
                 add_log(f"【网络代理】已启用代理: {proxy}")
-            if cookie_browser_bili != "无 (None)":
-                add_log(f"【账号授权】B站 Cookie 来源: {cookie_browser_bili}")
-            if cookie_browser_yt != "无 (None)":
-                add_log(f"【账号授权】YouTube Cookie 来源: {cookie_browser_yt}")
-            
             # Spawn download in separate daemon thread
             threading.Thread(
                 target=engine.run_download_thread,
-                args=(link, save_dir, format_sel, cookie_browser_bili, cookie_browser_yt, delay_max, proxy, ffmpeg_path, overwrite_existing),
+                args=(link, save_dir, format_sel, delay_max, proxy, ffmpeg_path, overwrite_existing),
                 daemon=True
             ).start()
             

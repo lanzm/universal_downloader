@@ -88,6 +88,32 @@ class DownloaderEngine:
     def log_msg(self, message):
         add_log(message)
 
+    def _prepare_raw_cookie_file(self, raw_cookie, domain, filename):
+        if not raw_cookie:
+            return None
+        try:
+            filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs", filename)
+            lines = ["# Netscape HTTP Cookie File\n"]
+            cookie_str = raw_cookie.strip()
+            if cookie_str.lower().startswith("cookie:"):
+                cookie_str = cookie_str[7:].strip()
+            parts = cookie_str.split(";")
+            for part in parts:
+                part = part.strip()
+                if not part or "=" not in part:
+                    continue
+                name, val = part.split("=", 1)
+                name = name.strip()
+                val = val.strip()
+                lines.append(f"{domain}\tTRUE\t/\tTRUE\t2000000000\t{name}\t{val}\n")
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.writelines(lines)
+            return filepath
+        except Exception as e:
+            self.log_msg(f"⚠️ 解析与保存原始 Cookie 发生异常: {str(e)}")
+            return None
+
     def _suspend_process(self, pid):
         try:
             import ctypes
@@ -239,8 +265,9 @@ class DownloaderEngine:
                 song_id = song.get('id', '')
                 link = f"https://music.163.com/#/song?id={song_id}"
                 results.append({"title": title, "author": author, "type": "网易云歌曲", "link": link})
-    def search_youtube(self, keyword, max_results=15, proxy=None, cookie_browser=None):
+    def search_youtube(self, keyword, max_results=15, proxy=None):
         results = []
+        temp_yt_search = None
         try:
             import json
             import subprocess
@@ -255,8 +282,14 @@ class DownloaderEngine:
             ]
             if proxy:
                 cmd.extend(["--proxy", proxy])
-            if cookie_browser and cookie_browser != "无 (None)":
-                cmd.extend(["--cookies-from-browser", cookie_browser])
+            
+            # Prioritize raw YouTube cookie string
+            from web_server import load_config
+            raw_yt = load_config().get("cookie_yt_raw", "")
+            if raw_yt:
+                temp_yt_search = self._prepare_raw_cookie_file(raw_yt, ".youtube.com", "temp_yt_search.txt")
+                if temp_yt_search:
+                    cmd.extend(["--cookies", temp_yt_search])
             cmd.append(query)
             
             startupinfo = None
@@ -294,10 +327,14 @@ class DownloaderEngine:
                     pass
         except Exception as e:
             self.log_msg(f"【YouTube搜索失败】发生异常: {str(e)}")
+        finally:
+            if temp_yt_search and os.path.exists(temp_yt_search):
+                try: os.remove(temp_yt_search)
+                except: pass
             
         return results
 
-    def download_bilibili_native(self, bvid, save_dir, format_sel, cookie_browser, delay_max=10.0, proxy=None, ffmpeg_path=None, overwrite_existing=True):
+    def download_bilibili_native(self, bvid, save_dir, format_sel, delay_max=10.0, proxy=None, ffmpeg_path=None, overwrite_existing=True):
         self.log_msg("开始调用 B站 自研极速接口进行下载与转换...")
         if proxy:
             self.http_session.proxies = {"http": proxy, "https": proxy}
@@ -310,19 +347,26 @@ class DownloaderEngine:
         }
         try:
             qn_value = 64
-            if cookie_browser and cookie_browser != "无 (None)":
+            # First prioritize raw Bilibili cookie string
+            from web_server import load_config
+            raw_bili = load_config().get("cookie_bili_raw", "")
+            if raw_bili:
                 try:
-                    from yt_dlp.cookies import extract_cookies_from_browser
-                    cj = extract_cookies_from_browser(cookie_browser)
-                    self.http_session.cookies.update(cj)
-                    self.log_msg(f"🔑 【登录凭证】已成功从 {cookie_browser} 自动获取 B站 登录 Cookie，为您申请最高音质流！")
+                    cookie_str = raw_bili.strip()
+                    if cookie_str.lower().startswith("cookie:"):
+                        cookie_str = cookie_str[7:].strip()
+                    import http.cookies
+                    simple_cookie = http.cookies.SimpleCookie()
+                    simple_cookie.load(cookie_str)
+                    for key, morsel in simple_cookie.items():
+                        self.http_session.cookies.set(key, morsel.value, domain=".bilibili.com", path="/")
+                    self.log_msg("🔑 【登录凭证】已成功加载粘贴的 B站 Cookie 凭证，为您申请最高音质流！")
                     qn_value = 116
                 except Exception as err:
-                    self.log_msg(f"⚠️ 【登录警告】从 {cookie_browser} 读取凭证失败: {str(err)}")
-                    self.log_msg("💡 提示：如果浏览器当前正开启着，请暂时将其关闭以解除数据库占用。当前将自动使用免登录游客模式下载（音质自动限制为标准品质）。")
+                    self.log_msg(f"⚠️ 【登录警告】解析粘贴的 B站 Cookie 失败: {str(err)}")
                     qn_value = 64
             else:
-                self.log_msg("ℹ 【下载提示】当前为免登录游客模式，音质受限为标准品质。如需高音质，请在右侧选择 Cookie来源 浏览器并确保您已在浏览器登录 B站（读取时需暂时关闭浏览器）。")
+                self.log_msg("ℹ 【下载提示】当前为免登录游客模式，音质受限为标准品质。如需高音质，请在配置参数中粘贴您的 B站 Cookie 凭证。")
 
             view_url = f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}"
             resp = self.http_session.get(view_url, headers=headers, timeout=10)
@@ -535,7 +579,7 @@ class DownloaderEngine:
             self.log_msg(f"【任务异常】自定义解析出错: {str(e)}")
             return False
 
-    def run_download_thread(self, link, save_dir, format_sel, cookie_browser_bili, cookie_browser_yt, delay_max=10.0, proxy=None, ffmpeg_path=None, overwrite_existing=True):
+    def run_download_thread(self, link, save_dir, format_sel, delay_max=10.0, proxy=None, ffmpeg_path=None, overwrite_existing=True):
         self.download_in_progress = True
         self.active_task = link
         self.cancel_requested = False
@@ -543,11 +587,20 @@ class DownloaderEngine:
         self.pause_event.set()
         self.current_process = None
         
+        # Load raw cookies and prepare temp cookie files
+        from web_server import load_config
+        config = load_config()
+        raw_bili = config.get("cookie_bili_raw", "")
+        raw_yt = config.get("cookie_yt_raw", "")
+        
+        self.cookie_file_bili = self._prepare_raw_cookie_file(raw_bili, ".bilibili.com", "temp_bili_cookies.txt")
+        self.cookie_file_yt = self._prepare_raw_cookie_file(raw_yt, ".youtube.com", "temp_yt_cookies.txt")
+        
         try:
             bv_match = re.search(r"BV[a-zA-Z0-9]{10}", link)
             if bv_match:
                 bvid = bv_match.group(0)
-                self.download_bilibili_native(bvid, save_dir, format_sel, cookie_browser_bili, delay_max=delay_max, proxy=proxy, ffmpeg_path=ffmpeg_path, overwrite_existing=overwrite_existing)
+                self.download_bilibili_native(bvid, save_dir, format_sel, delay_max=delay_max, proxy=proxy, ffmpeg_path=ffmpeg_path, overwrite_existing=overwrite_existing)
                 return
                 
             audio_format = "mp3"
@@ -583,9 +636,16 @@ class DownloaderEngine:
             else:
                 cmd.insert(-1, "--no-overwrites")
             
-            if cookie_browser_yt and cookie_browser_yt != "无 (None)":
-                cmd.insert(-1, "--cookies-from-browser")
-                cmd.insert(-1, cookie_browser_yt)
+            # Prioritize raw cookie files if they exist
+            is_yt_link = "youtube.com" in link or "youtu.be" in link
+            if is_yt_link:
+                if hasattr(self, "cookie_file_yt") and self.cookie_file_yt:
+                    cmd.insert(-1, "--cookies")
+                    cmd.insert(-1, self.cookie_file_yt)
+            else:
+                if hasattr(self, "cookie_file_bili") and self.cookie_file_bili:
+                    cmd.insert(-1, "--cookies")
+                    cmd.insert(-1, self.cookie_file_bili)
                 
             if proxy:
                 cmd.insert(-1, "--proxy")
@@ -663,6 +723,14 @@ class DownloaderEngine:
             self.download_paused = False
             self.pause_event.set()
             self.current_process = None
+            # Clean up temp cookie files
+            for attr in ["cookie_file_bili", "cookie_file_yt"]:
+                if hasattr(self, attr):
+                    fpath = getattr(self, attr)
+                    if fpath and os.path.exists(fpath):
+                        try: os.remove(fpath)
+                        except: pass
+                    setattr(self, attr, None)
 
 # Global shared instance of downloader
 engine = DownloaderEngine()

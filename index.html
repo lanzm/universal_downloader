@@ -544,7 +544,7 @@
         }
 
         .mini-progress-bar {
-            display: none;
+            display: none !important;
             align-items: center;
             gap: 10px;
             background-color: var(--bg-card);
@@ -1040,26 +1040,16 @@
             <div class="settings-section-title" style="margin-top: 24px;" data-i18n="settings-bilibili">Bilibili (B站) 配置</div>
             
             <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
-                    <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
-                        <div class="settings-title" data-i18n="cookie-title-bili">B站 Cookie 授权浏览器</div>
-                        <div class="settings-desc" data-i18n="cookie-desc-bili">若需拉取 B站 1080P 或无损高音质，请在此选择已登录 B站 的浏览器，提取器将自动读取登录凭证。</div>
-                    </div>
-                    <div class="settings-control" style="flex-wrap: wrap; gap: 8px;">
-                        <select id="settings-cookie-browser-bili" style="width: 160px;" onchange="saveCookieBrowserBili()">
-                            <option value="无 (None)" selected>无 (None)</option>
-                            <option value="edge">edge</option>
-                            <option value="chrome">chrome</option>
-                            <option value="firefox">firefox</option>
-                        </select>
-                        <button id="btn-browser-login-bili" onclick="openBrowserLogin('bilibili')" data-i18n="btn-go-login-bili" style="padding: 10px 14px; font-size: 13px;">登录 B站</button>
-                    </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                    <div class="settings-title" style="font-size: 13px;">B站 Cookie 字符串 (绕过 DPAPI 加密与文件锁定)</div>
+                    <div class="settings-desc" style="font-size: 12px; margin-bottom: 4px;">若需拉取 B站 1080P 或无损高音质，请在 Edge/Chrome 按 F12 -> 网络，复制任意网络请求请求头中的 Cookie 字段值粘贴到下方。</div>
+                    <textarea id="settings-cookie-bili-raw" rows="3" style="width: 100%; font-size: 12.5px; font-family: monospace; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 8px 10px; outline: none; resize: vertical;" placeholder="在此粘贴 B站 的原始 Cookie 文本..." onchange="saveCookieBiliRaw()"></textarea>
                 </div>
                 
                 <!-- Cookie warning banner -->
                 <div id="cookie-warning-banner" style="display: none; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #f87171; line-height: 1.5; align-items: center; gap: 8px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    <span data-i18n="cookie-warn-text">由于您选择了非 MP3 格式（FLAC/M4A），B站必须关联 Cookie 授权浏览器方可提取高音质/无损音频，请在上方选择包含您B站登录状态的浏览器，否则可能仅下载最低的 64k 标准音质。</span>
+                    <span data-i18n="cookie-warn-text">由于您选择了非 MP3 格式（FLAC/M4A），B站必须关联 Cookie 凭证方可提取高音质/无损音频，请在上方框中粘贴您的B站登录 Cookie，否则可能仅下载最低的 64k 标准音质。</span>
                 </div>
             </div>
 
@@ -1080,20 +1070,10 @@
             <div class="settings-section-title" style="margin-top: 24px;" data-i18n="settings-youtube">YouTube (油管) 配置</div>
             
             <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
-                    <div class="settings-info" style="flex-grow: 1; min-width: 250px;">
-                        <div class="settings-title" data-i18n="cookie-title-yt">YouTube Cookie 授权浏览器</div>
-                        <div class="settings-desc" data-i18n="cookie-desc-yt">遇到YouTube机器人校验“Sign in to confirm you’re not a bot”时，请选择已登录 YouTube 账号的浏览器，提取器将自动读取登录状态。</div>
-                    </div>
-                    <div class="settings-control" style="flex-wrap: wrap; gap: 8px;">
-                        <select id="settings-cookie-browser-yt" style="width: 160px;" onchange="saveCookieBrowserYt()">
-                            <option value="无 (None)" selected>无 (None)</option>
-                            <option value="edge">edge</option>
-                            <option value="chrome">chrome</option>
-                            <option value="firefox">firefox</option>
-                        </select>
-                        <button id="btn-browser-login-yt" onclick="openBrowserLogin('youtube')" data-i18n="btn-go-login-yt" style="padding: 10px 14px; font-size: 13px;">登录 YouTube</button>
-                    </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                    <div class="settings-title" style="font-size: 13px;">YouTube Cookie 字符串 (用于绕过人机限制)</div>
+                    <div class="settings-desc" style="font-size: 12px; margin-bottom: 4px;">若下载 YouTube 遇到“Sign in to confirm you're not a bot”人机校验限制，可在此粘贴来自浏览器的 YouTube Cookie 字符串。</div>
+                    <textarea id="settings-cookie-yt-raw" rows="3" style="width: 100%; font-size: 12.5px; font-family: monospace; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main); padding: 8px 10px; outline: none; resize: vertical;" placeholder="在此粘贴 YouTube 的原始 Cookie 文本..." onchange="saveCookieYtRaw()"></textarea>
                 </div>
             </div>
 
@@ -1517,8 +1497,8 @@
                     document.getElementById('settings-proxy').disabled = !data.proxy_enable;
                     
                     // Populate cookies
-                    document.getElementById('settings-cookie-browser-bili').value = data.cookie_browser_bili;
-                    document.getElementById('settings-cookie-browser-yt').value = data.cookie_browser_yt;
+                    document.getElementById('settings-cookie-bili-raw').value = data.cookie_bili_raw || '';
+                    document.getElementById('settings-cookie-yt-raw').value = data.cookie_yt_raw || '';
                     
                     // Populate overwrite setting
                     const overwriteExisting = data.overwrite_existing !== false;
@@ -1604,9 +1584,7 @@
             tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 50px 0;">${currentLang === 'zh' ? '正在检索中，请稍候...' : 'Searching, please wait...'}</td></tr>`;
             const proxyEnable = localStorage.getItem('network-proxy-enable') === 'true';
             const proxy = proxyEnable ? (localStorage.getItem('network-proxy') || 'http://127.0.0.1:7890') : '';
-            const cookieBrowserYt = document.getElementById('settings-cookie-browser-yt').value;
-
-            fetch(`/api/search?platform=${encodeURIComponent(platform)}&keyword=${encodeURIComponent(keyword)}&proxy=${encodeURIComponent(proxy)}&cookie_browser_yt=${encodeURIComponent(cookieBrowserYt)}`)
+            fetch(`/api/search?platform=${encodeURIComponent(platform)}&keyword=${encodeURIComponent(keyword)}&proxy=${encodeURIComponent(proxy)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.error) {
@@ -1655,8 +1633,6 @@
         function triggerDownload(link) {
             const save_dir = document.getElementById('settings-save-dir').value.trim();
             const format = document.getElementById('settings-audio-format').value;
-            const cookieBrowserBili = document.getElementById('settings-cookie-browser-bili').value;
-            const cookieBrowserYt = document.getElementById('settings-cookie-browser-yt').value;
             
             const isYt = link.includes('youtube.com') || link.includes('youtu.be') || link.includes('youtube') || link.includes('youtu');
             const delayMax = isYt ? 
@@ -1674,8 +1650,6 @@
                     link: link,
                     save_dir: save_dir,
                     format: format,
-                    cookie_browser_bili: cookieBrowserBili,
-                    cookie_browser_yt: cookieBrowserYt,
                     delay_max: delayMax,
                     proxy: proxy
                 })
@@ -1786,63 +1760,27 @@
 
         function checkCookieTip() {
             const format = document.getElementById('settings-audio-format').value;
-            const cookieBrowserBili = document.getElementById('settings-cookie-browser-bili').value;
+            const cookieBiliRaw = document.getElementById('settings-cookie-bili-raw').value.trim();
             const banner = document.getElementById('cookie-warning-banner');
-            const loginBtnBili = document.getElementById('btn-browser-login-bili');
-            
-            if (loginBtnBili) {
-                loginBtnBili.disabled = (cookieBrowserBili === '无 (None)');
-            }
             
             if (!banner) return;
             
-            if (format !== 'MP3 (320kbps)' && cookieBrowserBili === '无 (None)') {
+            if (format !== 'MP3 (320kbps)' && !cookieBiliRaw) {
                 banner.style.display = 'flex';
             } else {
                 banner.style.display = 'none';
             }
         }
 
-        function saveCookieBrowserBili() {
-            const val = document.getElementById('settings-cookie-browser-bili').value;
-            saveConfigToServer({ cookie_browser_bili: val });
+        function saveCookieBiliRaw() {
+            const val = document.getElementById('settings-cookie-bili-raw').value;
+            saveConfigToServer({ cookie_bili_raw: val });
             checkCookieTip();
         }
 
-        function saveCookieBrowserYt() {
-            const val = document.getElementById('settings-cookie-browser-yt').value;
-            saveConfigToServer({ cookie_browser_yt: val });
-            
-            const loginBtnYt = document.getElementById('btn-browser-login-yt');
-            if (loginBtnYt) {
-                loginBtnYt.disabled = (val === '无 (None)');
-            }
-        }
-
-        function openBrowserLogin(platform) {
-            const selectId = platform === 'youtube' ? 'settings-cookie-browser-yt' : 'settings-cookie-browser-bili';
-            const browser = document.getElementById(selectId).value;
-            if (browser === '无 (None)') {
-                alert(i18n[currentLang]["alert-select-browser"]);
-                return;
-            }
-            
-            fetch('/api/open_browser_login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ browser: browser, platform: platform })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(i18n[currentLang]["toast-launching-browser"]);
-                } else {
-                    alert(`拉起浏览器失败: ${data.error}`);
-                }
-            })
-            .catch(err => {
-                showToast(currentLang === 'zh' ? '无法连接本地后台服务' : 'Cannot connect to backend server');
-            });
+        function saveCookieYtRaw() {
+            const val = document.getElementById('settings-cookie-yt-raw').value;
+            saveConfigToServer({ cookie_yt_raw: val });
         }
 
         function saveProxySetting() {
